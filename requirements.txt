@@ -12,3 +12,4 @@ pyresparser
 Requests
 scikit-learn
 wordcloud
+gunicorn
