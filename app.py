@@ -5,6 +5,7 @@ import sys
 sys.path.append("..") # Adds higher directory to python modules path.
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # 16 MB limit
 
 # Register blueprints
 from routes.upload_resume import upload_resume_bp
@@ -28,7 +29,7 @@ app.register_blueprint(overall_score_bp)
 
 @app.route("/")
 def index():
-    return "hello world!"
+    return render_template("index.html")
 
 
 if __name__ == "__main__":

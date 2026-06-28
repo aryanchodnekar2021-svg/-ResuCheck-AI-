@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResuCheck AI - Advanced Resume Screener & ATS Optimizer</title>
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.5);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-primary-glow: rgba(99, 102, 241, 0.15);
+            --accent-secondary: #06b6d4; /* Cyan */
+            --accent-success: #10b981; /* Emerald */
+            --accent-warning: #f59e0b; /* Amber */
+            --accent-danger: #ef4444; /* Rose */
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        /* Ambient Background Blobs */
+        .ambient-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .blob-1 {
+            top: -100px;
+            left: -100px;
+            background-color: var(--accent-primary);
+        }
+
+        .blob-2 {
+            bottom: -100px;
+            right: -100px;
+            background-color: var(--accent-secondary);
+        }
+
+        /* Container & Grid layout */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .logo {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-primary) 70%, var(--accent-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+            margin-top: 0.5rem;
+        }
+
+        /* Glassmorphic card styling */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            padding: 2rem;
+            transition: var(--transition);
+        }
+
+        /* Upload Container styles */
+        .upload-section {
+            max-width: 600px;
+            margin: 2rem auto;
+            width: 100%;
+        }
+
+        .dropzone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-lg);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.01);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.04);
+            box-shadow: 0 0 20px 0 var(--accent-primary-glow);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--accent-primary);
+            transition: var(--transition);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .dropzone p {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .dropzone span {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, #4f46e5 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.8rem 1.8rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Loading Spinner and States */
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 3rem auto;
+            text-align: center;
+        }
+
+        .scanner-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.05);
+            border-top: 4px solid var(--accent-primary);
+            border-right: 4px solid var(--accent-secondary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-status {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+        }
+
+        /* Dashboard Grid Layout (Hidden by default) */
+        .dashboard {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @media (min-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1.2fr 1.8fr;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Score Circle SVG Styles */
+        .score-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .svg-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+
+        .svg-ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.03);
+            stroke-width: 12;
+        }
+
+        .svg-ring-progress {
+            fill: none;
+            stroke: url(#scoreGradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            stroke-dasharray: 502;
+            stroke-dashoffset: 502;
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .score-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .score-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Info grids and details */
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.8rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .info-item:last-child {
+            border: none;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            max-width: 60%;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Pills and Badges */
+        .pills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .pill:hover {
+            background: var(--accent-primary-glow);
+            border-color: var(--accent-primary);
+            transform: scale(1.05);
+        }
+
+        .pill-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.2);
+            color: var(--accent-success);
+        }
+
+        .pill-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.2);
+            color: var(--accent-warning);
+        }
+
+        /* Course list styling */
+        .course-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 600px) {
+            .course-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .course-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .course-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .course-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .course-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Checklist Indicator */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.9rem;
+        }
+
+        .check-item.checked {
+            border-color: rgba(16, 185, 129, 0.15);
+            background: rgba(16, 185, 129, 0.02);
+        }
+
+        .check-item.missing {
+            border-color: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.02);
+        }
+
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .checked .check-icon {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-success);
+        }
+
+        .missing .check-icon {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-danger);
+        }
+
+        /* Header Accent */
+        .check-badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        
+        .checked .check-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-success);
+        }
+        
+        .missing .check-badge {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-danger);
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-blob blob-1"></div>
+    <div class="ambient-blob blob-2"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 6V12L16 14" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="logoGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366f1"/>
+                            <stop offset="1" stop-color="#06b6d4"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                ResuCheck AI
+            </div>
+            <div class="subtitle">Extract data, analyze sections, score ATS quality & get targeted recommendations</div>
+        </header>
+
+        <!-- Upload Widget -->
+        <div class="glass-card upload-section" id="uploadCard">
+            <div class="dropzone" id="dropzone">
+                <div class="upload-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <p>Drag & drop your resume PDF here</p>
+                <span>Supports PDF format up to 10MB</span>
+                <button class="btn" onclick="document.getElementById('fileInput').click()">Browse Files</button>
+                <input type="file" id="fileInput" class="file-input" accept=".pdf">
+            </div>
+        </div>
+
+        <!-- Loader widget -->
+        <div class="loader-container" id="loader">
+            <div class="scanner-ring"></div>
+            <div class="loader-status" id="loaderStatus">Scanning resume layout...</div>
+        </div>
+
+        <!-- Main Dashboard View -->
+        <div class="dashboard" id="dashboard">
+            <!-- Left Grid Column -->
+            <div class="left-col">
+                <!-- Score breakdown -->
+                <div class="glass-card score-card">
+                    <div class="section-title" style="width: 100%; text-align: left; justify-content: flex-start; margin-bottom: 0;">
+                        ATS Compatibility
+                    </div>
+                    <div class="svg-container">
+                        <svg width="180" height="180" viewBox="0 0 180 180">
+                            <circle class="svg-ring-bg" cx="90" cy="90" r="80"/>
+                            <circle class="svg-ring-progress" id="scoreRing" cx="90" cy="90" r="80"/>
+                            <defs>
+                                <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#6366f1" />
+                                    <stop offset="100%" stop-color="#06b6d4" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="score-inner">
+                            <span class="score-value" id="scoreVal">0</span>
+                            <span class="score-label">Score</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 250px;" id="scoreSummary">
+                        Your resume meets most formatting and layout criteria.
+                    </p>
+                </div>
+
+                <!-- Profile details -->
+                <div class="glass-card">
+                    <div class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Profile Overview
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Candidate Name</span>
+                        <span class="info-value" id="profName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email Address</span>
+                        <span class="info-value" id="profEmail" style="text-transform: lowercase;">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone Number</span>
+                        <span class="info-value" id="profPhone">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">College/University</span>
+                        <span class="info-value" id="profCollege">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Degree Target</span>
+                        <span class="info-value" id="profDegree">-</span>
+                    </div>
+                </div>
+
+                <!-- Classification Domain -->
+                <div class="glass-card">
+                    <div class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                        Classified Track
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        Your profile matches the skill requirements for:
+                    </p>
+                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent-secondary);" id="classDomain">
+                        Software Developer
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Grid Column -->
+            <div class="right-col">
+                <!-- Checklist grid -->
+                <div class="glass-card">
+                    <div class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        Resume Layout Breakdown
+                    </div>
+                    <div class="checklist" id="checkList">
+                        <!-- Filled in via JS -->
+                    </div>
+                </div>
+
+                <!-- Recommended skills -->
+                <div class="glass-card">
+                    <div class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        Matched & Suggested Skills
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        We identified these key skills in your resume, and suggest adding the following missing competencies to boost your matching rate:
+                    </p>
+                    <div>
+                        <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.5rem; font-weight: 600;">Identified Skills</h4>
+                        <div class="pills-container" id="matchedSkills">
+                            <!-- Matched skills pills -->
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <h4 style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.5rem; font-weight: 600;">Recommended Missing Skills</h4>
+                        <div class="pills-container" id="missingSkills">
+                            <!-- Missing skills pills -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course suggestions -->
+                <div class="glass-card">
+                    <div class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        Recommended Upskilling Courses
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.2rem;">
+                        Learn new concepts and fill skill gaps with these recommended courses:
+                    </p>
+                    <div class="course-grid" id="courseList">
+                        <!-- Course cards filled in via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast Notification -->
+    <div class="toast" id="toast">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="toastMsg">Error uploading file.</span>
+    </div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadCard = document.getElementById('uploadCard');
+        const loader = document.getElementById('loader');
+        const loaderStatus = document.getElementById('loaderStatus');
+        const dashboard = document.getElementById('dashboard');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+
+        // Drag and drop events
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (fileInput.files.length) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        function showToast(msg) {
+            toastMsg.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function handleFile(file) {
+            if (file.type !== 'application/pdf') {
+                showToast('Please select a valid PDF file.');
+                return;
+            }
+
+            // Hide upload zone and show loader
+            uploadCard.style.display = 'none';
+            loader.style.display = 'flex';
+            dashboard.style.display = 'none';
+
+            // Start updating loading statuses
+            const statuses = [
+                'Uploading document...',
+                'Parsing layout and metadata...',
+                'Evaluating section completeness...',
+                'Calculating ATS compatibility score...',
+                'Fetching skill matches and courses...'
+            ];
+            let statusIndex = 0;
+            loaderStatus.innerText = statuses[0];
+            const statusInterval = setInterval(() => {
+                if (statusIndex < statuses.length - 1) {
+                    statusIndex++;
+                    loaderStatus.innerText = statuses[statusIndex];
+                }
+            }, 1200);
+
+            // Upload PDF to backend
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload-resume', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to parse resume');
+                return res.json();
+            })
+            .then(data => {
+                clearInterval(statusInterval);
+                loader.style.display = 'none';
+                renderDashboard(data.analysis);
+            })
+            .catch(err => {
+                clearInterval(statusInterval);
+                loader.style.display = 'none';
+                uploadCard.style.display = 'block';
+                showToast(err.message || 'Error processing your resume PDF.');
+            });
+        }
+
+        function renderDashboard(analysis) {
+            // Render Profile details
+            document.getElementById('profName').innerText = analysis.profile.name || 'Not Found';
+            document.getElementById('profEmail').innerText = analysis.profile.email || 'Not Found';
+            document.getElementById('profPhone').innerText = analysis.profile.mobile || 'Not Found';
+            document.getElementById('profCollege').innerText = analysis.profile.college || 'Not Found';
+            document.getElementById('profDegree').innerText = analysis.profile.degree || 'Not Found';
+
+            // Render classified domain
+            document.getElementById('classDomain').innerText = analysis.classified_domain || 'General Domain';
+
+            // Render ATS Score
+            const score = analysis.score;
+            document.getElementById('scoreVal').innerText = score;
+            
+            // Animating Circular progress ring
+            const circle = document.getElementById('scoreRing');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (score / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            // Set score text evaluation
+            let evaluation = 'Your resume meets standard layout criteria.';
+            if (score > 80) {
+                evaluation = 'Excellent! Highly compatible structure for major ATS scanners.';
+            } else if (score < 50) {
+                evaluation = 'Caution: Multiple core sections are missing or formatted poorly.';
+            }
+            document.getElementById('scoreSummary').innerText = evaluation;
+
+            // Render section checklist
+            const checkList = document.getElementById('checkList');
+            checkList.innerHTML = '';
+            Object.entries(analysis.checklist).forEach(([section, present]) => {
+                const item = document.createElement('div');
+                item.className = `check-item ${present ? 'checked' : 'missing'}`;
+                
+                const icon = document.createElement('div');
+                icon.className = 'check-icon';
+                icon.innerHTML = present ? '&#10003;' : '&#33;';
+                
+                const text = document.createElement('span');
+                text.innerText = section.toUpperCase();
+                text.style.fontWeight = '500';
+                text.style.flex = '1';
+
+                const badge = document.createElement('div');
+                badge.className = 'check-badge';
+                badge.innerText = present ? 'Found' : 'Missing';
+                
+                item.appendChild(icon);
+                item.appendChild(text);
+                item.appendChild(badge);
+                checkList.appendChild(item);
+            });
+
+            // Render Matched Skills
+            const matchedContainer = document.getElementById('matchedSkills');
+            matchedContainer.innerHTML = '';
+            if (analysis.skills.matched && analysis.skills.matched.length) {
+                analysis.skills.matched.forEach(skill => {
+                    const pill = document.createElement('div');
+                    pill.className = 'pill pill-success';
+                    pill.innerText = skill;
+                    matchedContainer.appendChild(pill);
+                });
+            } else {
+                matchedContainer.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">No technical skills identified.</span>';
+            }
+
+            // Render Missing/Recommended Skills
+            const missingContainer = document.getElementById('missingSkills');
+            missingContainer.innerHTML = '';
+            if (analysis.skills.recommended && analysis.skills.recommended.length) {
+                analysis.skills.recommended.forEach(skill => {
+                    const pill = document.createElement('div');
+                    pill.className = 'pill pill-warning';
+                    pill.innerText = skill;
+                    missingContainer.appendChild(pill);
+                });
+            } else {
+                missingContainer.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">No additional recommendations.</span>';
+            }
+
+            // Render Recommended Courses
+            const courseList = document.getElementById('courseList');
+            courseList.innerHTML = '';
+            if (analysis.courses && analysis.courses.length) {
+                analysis.courses.forEach(course => {
+                    const card = document.createElement('div');
+                    card.className = 'course-card';
+                    
+                    const name = document.createElement('div');
+                    name.className = 'course-name';
+                    name.innerText = course.title;
+                    
+                    const meta = document.createElement('div');
+                    meta.className = 'course-meta';
+                    meta.innerText = course.category || 'Professional Certificate';
+                    
+                    card.appendChild(name);
+                    card.appendChild(meta);
+                    courseList.appendChild(card);
+                });
+            } else {
+                courseList.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem; grid-column: 1/-1;">No course recommendations available.</span>';
+            }
+
+            // Show dashboard
+            dashboard.style.display = 'grid';
+        }
+    </script>
+</body>
+</html>
