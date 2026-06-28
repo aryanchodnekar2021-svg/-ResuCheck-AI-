@@ -19,3 +19,7 @@ credentials.json
 # Virtual environment files (pls name your virtualenv as venv)
 venv/
 
+# PyInstaller build outputs
+build/
+dist/
+*.spec
