@@ -4,7 +4,14 @@ from flask import Flask,render_template,send_from_directory
 import sys
 sys.path.append("..") # Adds higher directory to python modules path.
 
-app = Flask(__name__)
+import os
+
+if hasattr(sys, '_MEIPASS'):
+    template_dir = os.path.join(sys._MEIPASS, 'templates')
+    static_dir = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+else:
+    app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # 16 MB limit
 
 # Register blueprints

@@ -25,7 +25,11 @@ PROFESSIONS = {
 }
 
 def recommend_courses_dynamic(skills, num_courses=4):
-    csv_path = "data/model_data/dataset/course_recommendation/preprocessed_data.csv"
+    import sys
+    if hasattr(sys, '_MEIPASS'):
+        csv_path = os.path.join(sys._MEIPASS, "data/model_data/dataset/course_recommendation/preprocessed_data.csv")
+    else:
+        csv_path = "data/model_data/dataset/course_recommendation/preprocessed_data.csv"
     if not os.path.exists(csv_path):
         return []
     
