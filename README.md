@@ -1,5 +1,7 @@
 # ResuCheck AI - Advanced Resume Screener & ATS Optimizer
 
+![ResuCheck AI Landing Page](screenshots/landing_page.png)
+
 ResuCheck AI is a premium, fully-functional web application designed to simplify the resume screening process for both recruiters and job seekers. It parses PDF resumes, scores formatting and completeness against standard ATS constraints, classifies professional domains, and suggests matching skills/courses to improve candidate profiles.
 
 ---
